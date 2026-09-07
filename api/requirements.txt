@@ -1,0 +1,21 @@
+# planner_api — self-contained FastAPI service (agentic Planner→SQL, generate-only)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.0
+python-dotenv>=1.0
+
+# agent + model + infra
+strands-agents>=1.0
+strands-agents-tools>=0.1
+boto3>=1.43
+requests>=2.31
+numpy>=1.26
+
+# postgres + sql
+psycopg2-binary>=2.9
+sqlglot>=25.0
+
+# tests
+pytest>=8.0
+httpx>=0.27
