@@ -21,6 +21,9 @@ log = get_logger("clients.postgres")
 def pg_dsn_kwargs(s: Settings) -> dict:
     cfg = {"host": s.pg_host, "port": s.pg_port, "dbname": s.pg_dbname,
            "user": s.pg_user, "password": s.pg_password, "connect_timeout": 20}
+    sslmode = (s.pg_sslmode or "").strip()
+    if sslmode:                       # Cloud SQL may enforce SSL (even on private IP)
+        cfg["sslmode"] = sslmode
     schema = (s.pg_kb_schema or "").strip()
     if schema and schema != "public":
         cfg["options"] = f"-c search_path={schema},public"

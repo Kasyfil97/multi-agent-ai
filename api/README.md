@@ -92,29 +92,31 @@ per-stage, retry, kredensial Bedrock/OIDC, PG, embedding. `CONF_THRESHOLD=38` (g
 uvicorn `app.main:app` di port `8000` (override via env `PORT`/`WORKERS`), plus
 HEALTHCHECK ke `/health`.
 
+**Postgres = Cloud SQL via Private IP.** Bukan `localhost`/docker-internal — set
+`PG_HOST` ke **private IP** instance Cloud SQL (`10.x.x.x`). Container **wajib** jalan di
+host/subnet yang punya akses VPC ke instance itu (mis. GKE/Compute Engine di VPC yang
+sama, atau via VPC connector). Set `PG_SSLMODE=require` bila instance mewajibkan SSL.
+
 ```bash
 cd api
 docker build -t planner-api .
 
-# jalankan; sambungkan ke Postgres via port yang sudah dipublish container DB
+# jalankan di host yang punya akses VPC ke Cloud SQL (private IP)
 docker run --rm -p 8100:8000 --env-file .env \
-  -e PG_HOST=host.docker.internal -e PG_PORT=5432 \
+  -e PG_HOST=10.0.0.3 -e PG_PORT=5432 \
+  -e PG_SSLMODE=require \
   planner-api
 
 curl -s localhost:8100/health     # {"status":"ok",...}
 curl -s localhost:8100/ready      # ready|degraded|unavailable
 ```
 
-Alternatif rapi (satu user-defined network, resolusi by-name):
-```bash
-docker network create planner-net
-docker network connect planner-net postgres-pgvector
-docker run --rm -p 8100:8000 --env-file .env --network planner-net \
-  -e PG_HOST=postgres-pgvector -e PG_PORT=5432 planner-api
-```
+Di GKE, jalankan Pod di VPC ber-akses Cloud SQL dan suntik `PG_HOST` (private IP) +
+kredensial via `Secret`/`env`. Tidak perlu Cloud SQL Auth Proxy untuk jalur private IP.
 
 Catatan: `.env` **tidak** di-copy ke image (di-ignore) — kredensial diinjeksi saat
-run via `--env-file`/`-e`. `/ready` akan `503` bila PG/embedding belum tersambung.
+run via `--env-file`/`-e`/Secret. `/ready` akan `503` bila PG/embedding belum tersambung
+(mis. container tidak berada di VPC yang bisa menjangkau private IP Cloud SQL).
 
 ## Error handling untuk agentic AI
 

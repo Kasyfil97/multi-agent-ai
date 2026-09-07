@@ -53,13 +53,14 @@ class Settings(BaseSettings):
     aws_role_arn_bridge: str = ""
     aws_role_arn_target: str = ""
 
-    # --- Postgres ---
-    pg_host: str = "localhost"
+    # --- Postgres (Cloud SQL via Private IP; container harus punya akses VPC) ---
+    pg_host: str = "localhost"        # prod: private IP instance Cloud SQL (10.x.x.x)
     pg_port: int = 5432
     pg_dbname: str = "postgres"
     pg_user: str = "admin"
     pg_password: str = "admin123"
     pg_kb_schema: str = "public"
+    pg_sslmode: str = ""              # kosong=default libpq; set 'require'/'verify-ca' bila SSL diwajibkan
 
     # --- embedding service (bge-m3) ---
     embed_url: str = ""
