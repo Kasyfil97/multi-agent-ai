@@ -85,6 +85,37 @@ curl -s -X POST localhost:8100/v1/search-columns -H "content-type: application/j
 Konfigurasi lewat env / `.env` (lihat `.env.example`): pool & konkurensi, timeout
 per-stage, retry, kredensial Bedrock/OIDC, PG, embedding. `CONF_THRESHOLD=38` (gate).
 
+## Docker
+
+`Dockerfile` + `.dockerignore` ada di folder ini (`api/`). Build context = `api/`
+(dump 684 MB di `../dumps/` otomatis tidak ikut). Image: `python:3.12-slim`, non-root,
+uvicorn `app.main:app` di port `8000` (override via env `PORT`/`WORKERS`), plus
+HEALTHCHECK ke `/health`.
+
+```bash
+cd api
+docker build -t planner-api .
+
+# jalankan; sambungkan ke Postgres via port yang sudah dipublish container DB
+docker run --rm -p 8100:8000 --env-file .env \
+  -e PG_HOST=host.docker.internal -e PG_PORT=5432 \
+  planner-api
+
+curl -s localhost:8100/health     # {"status":"ok",...}
+curl -s localhost:8100/ready      # ready|degraded|unavailable
+```
+
+Alternatif rapi (satu user-defined network, resolusi by-name):
+```bash
+docker network create planner-net
+docker network connect planner-net postgres-pgvector
+docker run --rm -p 8100:8000 --env-file .env --network planner-net \
+  -e PG_HOST=postgres-pgvector -e PG_PORT=5432 planner-api
+```
+
+Catatan: `.env` **tidak** di-copy ke image (di-ignore) — kredensial diinjeksi saat
+run via `--env-file`/`-e`. `/ready` akan `503` bila PG/embedding belum tersambung.
+
 ## Error handling untuk agentic AI
 
 - **Taxonomy** (`app/errors.py`): `bad_request`(400), `not_found`(404),

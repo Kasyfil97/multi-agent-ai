@@ -7,4 +7,4 @@ __pycache__/
 planner_eval/
 retrieval_eval/
 test_data/
-.
+dumps/
